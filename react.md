@@ -291,7 +291,7 @@ class Mycomponent extends React.Component{
 
 - **更新阶段**: 由组件内部this.setSate()或父组件重新render触发
 1.getDerivedStateFromProps
-2.控制组件更新的“阀门”----shouldComponentUpdate() 返回值为true才进行下去
+2.控制组件更新的“阀门”----shouldComponentUpdate(nextProps,nextState) 返回值为true才进行下去
 3.render()
 4.getSnapshotBeforeUpdate
 5.组件更新完毕的钩子----**componentDidUpdate(preProps,preState,snapshotValue)** =====> 常用
@@ -609,6 +609,177 @@ export default class Search extends Component {
 
 ```
 # 6.路由
+## 基本使用
+1.解释：在组件中需要不刷新页面来跳转部分页面。在平常我们都使用a标签来跳转页面，在这里我们可以使用路由的`<Link />`  
+2.使用：
+- 下载 npm i react-router-dom
+- 引入路由，需要啥引入啥 import {...} from react-router-dom 
+- `<App>`的最外侧包裹了一个`<BrowserRouter>`或`<HashRouter>` 
+- 引入路由组件
+- 在合适的地方使用路由组件 ` <Link className="list-group-item" to="/路径">路由组件</Link>`
+- 在下面注册路由`	<Route path="/路径" component={About}/>`  
+  
+3.使用路由的时候太长了，我们可以封装一个`	<NavLink activeClassName="atguigu" className="list-group-item" {...this.props}/>`在使用路由组件的时候直接就可以`<MyNavLink to="/about">About</MyNavLink>`  
+4.在注册路由的时候，当path相同的时候，会循环查找注册路由里面的，所以我们引入了`<Switch/>`，形成一一匹配，匹配好了就不向下查找了  
+5.解决多级路径刷新页面样式丢失的问题
+	- public/index.html 中 引入样式时不写 ./ 写 / （常用）
+	- public/index.html 中 引入样式时不写 ./ 写 %PUBLIC_URL% （常用）
+	- 使用HashRouter  
+6.默认路由`<Redirect to="/about"/>`
+7.嵌套路由，套娃开始  
+8.父传子(大传小)传参数
+- 1.传递params参数  
+   - 使用路由组件时：`<Link to={`/home/message/detail/${msgObj.id}/${msgObj.title}`}>{msgObj.title}</Link>`  
+   - 注册路由组件时：`<Route path="/home/message/detail/:id/:title" component={Detail}/>`要声明传过去参数(id,title)  
+   - 在路由组件中通过`	const {id,title} = this.props.match.params`接收参数
+- 2.传递search参数
+  - 使用路由组件时：`<Link to={`/home/message/detail/?id=${msgObj.id}&title=${msgObj.title}`}>{msgObj.title}</Link>`
+  - 正常注册路由组件
+  - 在路由组件中通过`	const {id,title} = this.props.location.search`接收参数
+- 3.传递state参数
+   - 使用路由组件时：`<Link to={{pathname:'/home/message/detail',state:{id:msgObj.id,title:msgObj.title}}}>{msgObj.title}</Link>`  
+   - 正常注册路由组件  
+   - 在路由组件中通过`const {id,title} = this.props.location.state`接收参数  
+
+9.返回是通过出栈方式还是代替方式  
+   - 默认是push
+   - 如果是替换(replace)的话`	<Link replace to={{pathname:'/home/message/detail',state:{id:msgObj.id,title:msgObj.title}}}>{msgObj.title}</Link>`  
+  
+10.编程式路由导航
+ 不用`<Link />`和`<NavLink/>`让路由跳转，借助路由身上独有的API-->history,通过this.props.history对操作路由跳转、前进、后退  
+ - this.prosp.history.push()
+ - this.prosp.history.replace()
+ - this.prosp.history.goBack()
+ - this.prosp.history.goForward()
+ - this.prosp.history.go()
+  ```
+  export default class Message extends Component {
+	state = {
+		messageArr:[
+			{id:'01',title:'消息1'},
+			{id:'02',title:'消息2'},
+			{id:'03',title:'消息3'},
+		]
+	}
+
+	replaceShow = (id,title)=>{
+		//replace跳转+携带params参数
+		//this.props.history.replace(`/home/message/detail/${id}/${title}`)
+
+		//replace跳转+携带search参数
+		// this.props.history.replace(`/home/message/detail?id=${id}&title=${title}`)
+
+		//replace跳转+携带state参数
+		this.props.history.replace(`/home/message/detail`,{id,title})
+	}
+
+	pushShow = (id,title)=>{
+		//push跳转+携带params参数
+		// this.props.history.push(`/home/message/detail/${id}/${title}`)
+
+		//push跳转+携带search参数
+		// this.props.history.push(`/home/message/detail?id=${id}&title=${title}`)
+
+		//push跳转+携带state参数
+		this.props.history.push(`/home/message/detail`,{id,title})
+		
+	}
+
+	back = ()=>{
+		this.props.history.goBack()
+	}
+
+	forward = ()=>{
+		this.props.history.goForward()
+	}
+
+	go = ()=>{
+		this.props.history.go(-2)
+	}
+
+	render() {
+		const {messageArr} = this.state
+		return (
+			<div>
+				<ul>
+					{
+						messageArr.map((msgObj)=>{
+							return (
+								<li key={msgObj.id}>
+
+									{/* 向路由组件传递params参数 */}
+									{/* <Link to={`/home/message/detail/${msgObj.id}/${msgObj.title}`}>{msgObj.title}</Link> */}
+
+									{/* 向路由组件传递search参数 */}
+									{/* <Link to={`/home/message/detail/?id=${msgObj.id}&title=${msgObj.title}`}>{msgObj.title}</Link> */}
+
+									{/* 向路由组件传递state参数 */}
+									<Link to={{pathname:'/home/message/detail',state:{id:msgObj.id,title:msgObj.title}}}>{msgObj.title}</Link>
+
+									<button onClick={()=> this.pushShow(msgObj.id,msgObj.title)}>push查看</button>
+									<button onClick={()=> this.replaceShow(msgObj.id,msgObj.title)}>replace查看</button>
+								</li>
+							)
+						})
+					}
+				</ul>
+				<hr/>
+				{/* 声明接收params参数 */}
+				{/* <Route path="/home/message/detail/:id/:title" component={Detail}/> */}
+
+				{/* search参数无需声明接收，正常注册路由即可 */}
+				{/* <Route path="/home/message/detail" component={Detail}/> */}
+
+				{/* state参数无需声明接收，正常注册路由即可 */}
+				<Route path="/home/message/detail" component={Detail}/>
+
+				<button onClick={this.back}>回退</button>&nbsp;
+				<button onClick={this.forward}>前进</button>&nbsp;
+				<button onClick={this.go}>go</button>
+
+			</div>
+		)
+	}
+}
+ ```
+  10.BrowserRouter与HashRouter的区别
+			1.底层原理不一样：
+						BrowserRouter使用的是H5的history API，不兼容IE9及以下版本。
+						HashRouter使用的是URL的哈希值。
+			2.path表现形式不一样
+						BrowserRouter的路径中没有#,例如：localhost:3000/demo/test
+						HashRouter的路径包含#,例如：localhost:3000/#/demo/test
+			3.刷新后对路由state参数的影响
+						(1).BrowserRouter没有任何影响，因为state保存在history对象中。
+						(2).HashRouter刷新后会导致路由state参数的丢失！！！
+			4.备注：HashRouter可以用于解决一些路径错误相关的问题。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # redux
   - 有啥用？当多个组件要共享一个状态数据的时候，我们将这个数据放在redux中，那个组件需要就去redux中取
 - 原理是啥？
@@ -641,3 +812,471 @@ store：
 
 ```
 reductor:
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 打包
+## 通过npm run build(webpack中的)  
+通过打包将react转化为js,将一个项目打包上线运行
+- 在生产环境打开服务器，用当前文件夹作为服务器使用serve build
+
+# 扩展
+## 1.setState()的两种用法
+  ### 方法一，传对象  
+  我们知道原来使用setState({count:99})里面直接调用对象，但是在后面要查看修改后的count值。显示的是修改前的，因为它是异步的，调用了setState()之后，它说等会，我先执行后面的(就是先执行查看再去修改),但是setState({},()=>{查看状态}),里面有回调函数。  
+
+### 方法二，传函数  
+  在setState中不止能传对象，还能传函数setState(()=>{},[(state,props)=>{}])---(函数，回调函数)。  
+使用这个函数的好处在于能接收到state和props,返回的是方法一的对象
+```
+export default class Demo extends Component {
+
+	state = {count:0}
+
+	add = ()=>{
+		//对象式的setState
+		/* //1.获取原来的count值
+		const {count} = this.state
+		//2.更新状态
+		this.setState({count:count+1},()=>{
+			console.log(this.state.count);
+		})
+		//console.log('12行的输出',this.state.count); //0 */
+
+		//函数式的setState，这是简写
+		this.setState( state => ({count:state.count+1}))
+
+    this.setState((state,props)=>{
+      return {count:state.count+1}
+    })
+	}
+
+	render() {
+		return (
+			<div>
+				<h1>当前求和为：{this.state.count}</h1>
+				<button onClick={this.add}>点我+1</button>
+			</div>
+		)
+	}
+}
+```
+## 2.lazyLoading  
+当我们写了很多的组件，但是一进入网页一刷新，就将所有的组件都加载进来了，使用lazy能解决这个问题，当要使用某个组件的时候才加载该组件。
+ - 引入lazy import React, { Component,lazy,Suspense} from 'react'
+ - 使用懒加载引入组件  const Home = lazy(()=> import('./Home') )
+ - 配合Suspense使用，因为当网速慢的时候能显示个 Loading组件(该组件使用普通加载)
+  ```
+  <Suspense fallback={<Loading/>}>
+		{/* 注册路由 */}
+			<Route path="/about" component={About}/>
+			<Route path="/home" component={Home}/>
+	</Suspense>
+  ```
+
+## 3.hook
+就是能让函数式组件能使用state和props.通过  
+- `const [count,setCount] = React.useState(count值)`和  
+- `const myRef = React.useRef()`
+- `React.useEffect(()=>{},[])`相当于**componentDidMount** []意思是什么都不检测
+- `React.useEffect(()=>{},[count])`相当于**componentDidUpdate**，[count])意思是检测count的更新，取决于[]的内容。
+- `React.useEffect(()=>{return ()=>{}},[])`中第一个参数函数的返回的那个函数相当于**componentWillUnmount**
+
+```
+/类式组件
+ class Demo extends React.Component {
+	state = {count:0}
+	myRef = React.createRef()
+
+	add = ()=>{
+		this.setState(state => ({count:state.count+1}))
+	}
+
+	unmount = ()=>{
+		ReactDOM.unmountComponentAtNode(document.getElementById('root'))
+	}
+
+	show = ()=>{
+		alert(this.myRef.current.value)
+	}
+
+	componentDidMount(){
+		this.timer = setInterval(()=>{
+			this.setState( state => ({count:state.count+1}))
+		},1000)
+	}
+
+	componentWillUnmount(){
+		clearInterval(this.timer)
+	}
+
+	render() {
+		return (
+			<div>
+				<input type="text" ref={this.myRef}/>
+				<h2>当前求和为{this.state.count}</h2>
+				<button onClick={this.add}>点我+1</button>
+				<button onClick={this.unmount}>卸载组件</button>
+				<button onClick={this.show}>点击提示数据</button>
+			</div>
+		)
+	}
+} 
+
+
+
+
+//函数式组件
+function Demo(){
+	const [count,setCount] = React.useState(0)
+	const myRef = React.useRef()
+
+	React.useEffect(()=>{
+		let timer = setInterval(()=>{
+			setCount(count => count+1 )
+		},1000)
+		return ()=>{
+			clearInterval(timer)
+		}
+	},[])
+
+	//加的回调
+	function add(){
+		//setCount(count+1) //第一种写法
+		setCount(count => count+1 )
+	}
+
+	//提示输入的回调
+	function show(){
+		alert(myRef.current.value)
+	}
+
+	//卸载组件的回调
+	function unmount(){
+		ReactDOM.unmountComponentAtNode(document.getElementById('root'))
+	}
+
+	return (
+		<div>
+			<input type="text" ref={myRef}/>
+			<h2>当前求和为：{count}</h2>
+			<button onClick={add}>点我+1</button>
+			<button onClick={unmount}>卸载组件</button>
+			<button onClick={show}>点我提示数据</button>
+		</div>
+	)
+}
+
+export default Demo
+```
+## 4.Fragment  
+这是啥呢？就是阿，你看App包了个div，组件里面还会有div，包的太多了，为了符合jsx语法。
+我们可以将这个div该为`<Fragment>代码<Fragment/>`或者`<></>`空标签(代码量小)
+
+## 5.Context
+在隔代组件之间，祖组件给后代传数据，使用context，也是在实例对象上，通过this.context获取  
+使用：  
+- 创建context对象`const MyContext = React.createContext()`和`const {Provider} = MyContext`
+- 第一种：在祖组件中将后代组件用`<Provider value="状态参数">后代组件<Provider/>`包裹，当这个后代组件包括自己的全部后代组件只要举手(`static contextType = MyContext`)都能通过this.context接收.这种只能是类组件使用。
+- 第二种：类式组件函数式组件都能使用，写为函数式组件(后代组件)
+   - 引入Consumer `const {Provider,Consumer} = MyContext`
+   - 使用。。。。还是直接看代码吧
+
+```
+//创建Context对象
+const MyContext = React.createContext()
+const {Provider,Consumer} = MyContext
+export default class A extends Component {
+	state = {username:'tom',age:18}
+
+	render() {
+		const {username,age} = this.state
+		return (
+			<div className="parent">
+				<h3>我是A组件</h3>
+				<h4>我的用户名是:{username}</h4>
+				<!-- 传数据 -->
+				<Provider value={{username,age}}>
+					<B/>
+				</Provider>
+			</div>
+		)
+	}
+}
+
+class B extends Component {
+	render() {
+		return (
+			<div className="child">
+				<h3>我是B组件</h3>
+				<C/>
+			</div>
+		)
+	}
+}
+//第一种
+/* class C extends Component {
+	//声明接收context
+	static contextType = MyContext
+	render() {
+		const {username,age} = this.context
+		return (
+			<div className="grand">
+				<h3>我是C组件</h3>
+				<h4>我从A组件接收到的用户名:{username},年龄是{age}</h4>
+			</div>
+		)
+	}
+} */
+//第二种
+function C(){
+	return (
+		<div className="grand">
+			<h3>我是C组件</h3>
+			<h4>我从A组件接收到的用户名:
+			<Consumer>
+				{value => `${value.username},年龄是${value.age}`}
+			</Consumer>
+			</h4>
+		</div>
+	)
+}
+```
+## 6. 组件优化
+
+### Component的2个问题 
+
+> 1. 只要执行setState(),即使不改变状态数据, 组件也会重新render()
+>
+> 2. 只当前组件重新render(), 就会自动重新render子组件 ==> 效率低
+
+### 效率高的做法
+
+>  只有当组件的state或props数据发生改变时才重新render()
+
+### 原因
+
+>  Component中的shouldComponentUpdate()总是返回true
+
+### 解决
+
+	办法1: 
+		重写shouldComponentUpdate()方法
+		比较新旧state或props数据, 如果有变化才返回true, 如果没有返回false
+	办法2:  
+		使用PureComponent
+		PureComponent重写了shouldComponentUpdate(), 只有state或props数据有变化才返回true
+		注意: 
+			只是进行state和props数据的浅比较, 如果只是数据对象内部数据变了, 返回false  
+			不要直接修改state数据, 而是要产生新数据
+	项目中一般使用PureComponent来优化
+
+## 7.render props
+刚开始我们定义父子关系,是像如下代码，一个组件中嵌套一个组件
+```
+export default class Parent extends Component {
+	render() {
+		return (
+			<div>
+				<h3>我是Parent组件</h3>
+				<A/>
+			</div>
+		)
+	}
+}
+
+class A extends Component {
+	state = {name:'tom'}
+	render() {
+		return (
+			<div>
+				<B/>
+			</div>
+		)
+	}
+}
+
+class B extends Component {
+	render() {
+		console.log('B--render');
+		return (
+			<div>
+				<h3>我是B组件</h3>
+			</div>
+		)
+	}
+}
+```
+除了通过这样还可以通过这样
+```
+export default class Parent extends Component {
+	render() {
+		return (
+			<div>
+				<h3>我是Parent组件</h3>
+				<A>
+				   <B/>
+				<A/>
+			</div>
+		)
+	}
+}
+
+class A extends Component {
+	render() {
+		return (
+			<div>
+				<h3>我是A组件</h3>
+				<!-- 在这里声明使用B组件，因为B组件放在这里面 -->
+				{this.props.children}
+			</div>
+		)
+	}
+}
+
+class B extends Component {
+	render() {
+		return (
+			<div>
+				<h3>我是B组件</h3>
+			</div>
+		)
+	}
+}
+```
+以上还能借助插槽的思想
+```
+export default class Parent extends Component {
+	render() {
+		return (
+			<div>
+				<h3>我是Parent组件</h3>
+				<!-- 到时候可以随便更改B组件这个位置为任何组件，返回值为一个组件 -->
+				<A render={(name)=><B name={name}/>}/>
+			</div>
+		)
+	}
+}
+
+class A extends Component {
+	state = {name:'tom'}
+	render() {
+		console.log(this.props);
+		const {name} = this.state
+		return (
+			<div>
+				<h3>我是A组件</h3>
+				<!-- 调用一下render函数，并将A的状态传过去 -->
+				{this.props.render(name)}
+			</div>
+		)
+	}
+}
+
+class B extends Component {
+	render() {
+		console.log('B--render');
+		return (
+			<div className="b">
+				<h3>我是B组件,{this.props.name}</h3>
+			</div>
+		)
+	}
+}
+```
+## 8.书写错误边界
+就是吧，为了防止一个组件的字符串解析错误呀等导致整个项目出错，我们使用错误边界，将这个错误限制在一定范围内(使用该组件时)。写在这个组件的父亲身上。
+使用这个生命周期钩子getDerivedStateFromError(error)，并携带错误
+```
+export default class Parent extends Component {
+
+	state = {
+		hasError:'' //用于标识子组件是否产生错误
+	}
+
+	//当Parent的子组件出现报错时候，会触发getDerivedStateFromError调用，并携带错误信息
+	static getDerivedStateFromError(error){
+		console.log('@@@',error);
+		return {hasError:error}
+	}
+
+	componentDidCatch(){
+		console.log('此处统计错误，反馈给服务器，用于通知编码人员进行bug的解决');
+	}
+
+	render() {
+		return (
+			<div>
+				<h2>我是Parent组件</h2>
+				{this.state.hasError ? <h2>当前网络不稳定，稍后再试</h2> : <Child/>}
+			</div>
+		)
+	}
+}
+```
+经过打包这个错误边界就起作用了  
+只能捕获后代组件生命周期产生的错误，不能捕获自己组件产生的错误和其他组件在合成事件、定时器中产生的错误
+
+##### 使用方式：
+
+getDerivedStateFromError配合componentDidCatch
+
+```js
+// 生命周期函数，一旦后台组件报错，就会触发
+static getDerivedStateFromError(error) {
+    console.log(error);
+    // 在render之前触发
+    // 返回新的state
+    return {
+        hasError: true,
+    };
+}
+
+componentDidCatch(error, info) {
+    // 统计页面的错误。发送请求发送到后台去
+    console.log(error, info);
+}
+```
+## 9. 组件通信方式总结
+
+#### 方式：
+
+		props：
+			(1).children props
+			(2).render props
+		消息订阅-发布：
+			pubs-sub、event等等
+		集中式管理：
+			redux、dva等等
+		conText:
+			生产者-消费者模式
+
+#### 组件间的关系
+
+		父子组件：props
+		兄弟组件(非嵌套组件)：消息订阅-发布、集中式管理
+		祖孙组件(跨级组件)：消息订阅-发布、集中式管理、conText(用的少)
