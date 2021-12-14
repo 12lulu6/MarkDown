@@ -1280,3 +1280,32 @@ componentDidCatch(error, info) {
 		父子组件：props
 		兄弟组件(非嵌套组件)：消息订阅-发布、集中式管理
 		祖孙组件(跨级组件)：消息订阅-发布、集中式管理、conText(用的少)
+
+# v6react-router
+>1.单独有一个router文件写组件,不在App中直接写
+>>- 在router中注册路由
+>>- 在router中要准备一个默认组件,通过`<Route path="/"  element={<Home/>}/>` 
+```
+//这是router
+export default function Router() {
+  return (
+    <div>
+      <Routes>
+        <Route path="/"  element={<Home/>}/>
+        <Route path="/about"  element={<About/>}/>
+      </Routes>
+    </div>
+  )
+}
+
+//这是Home指定的默认组件(点击跳到About组件)
+export default function Home() {
+  return (
+    <div>
+      <h2>我是Home组件</h2>
+      <Link to="/about">点击</Link>
+    </div>
+  )
+}
+```
+>>- 
