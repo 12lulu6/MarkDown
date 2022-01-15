@@ -30,19 +30,28 @@
   ![life!](./生命周期.png)
 
 ```
-created : 在绑定元素的属性或事件监听器被应用之前调用。
-
-beforeMount : 指令第一次绑定到元素并且在挂载父组件之前调用。。
-
-mounted : 在绑定元素的父组件被挂载后调用。。
-
-beforeUpdate: 在更新包含组件的 VNode 之前调用。。
-
-updated: 在包含组件的 VNode 及其子组件的 VNode 更新后调用。
-
-beforeUnmount: 当指令与在绑定元素父组件卸载之前时，只调用一次。
-
-unmounted: 当指令与元素解除绑定且父组件已卸载时，只调用一次。
+1：beforeCreat—创建前
+触发的行为：vue实例的挂载元素$el和数据对象data都为undefined，还未初始化。
+在此阶段可以做的事情：加loading事件
+2:created——创建后
+触发的行为：vue实例的数据对象data有了，el还没有
+在此阶段可以做的事情：解决loading，请求ajax数据为mounted渲染做准备
+3：beforeMount 渲染前
+触发的行为：vue实例的el和data都初始化了，但还是虚拟的dom节点，具体的data.filter还未替换
+4：mounted 渲染后
+触发的行为：vue实例挂载完成，data.filter成功渲染
+在此阶段可以做的事情：配合路由钩子使用
+5：beforeUpdate 更新前
+触发的行为：data更新时触发
+6： updated 更新后
+触发的行为：data更新时触发
+在此阶段可以做的事情：数据更新时，做一些处理（此处也可以用watch进行观测）
+7：beforeDestroy 销毁前
+触发的行为：组件销毁时触发
+在此阶段可以做的事情：可向用户询问是否销毁
+8：destroy 销毁后
+触发的行为：组件销毁时触发，vue实例解除了事件监听以及和dom的绑定（无响应了），但DOM节点依旧存在
+在此阶段可以做的事情：组件销毁时进行提示
 ```
 ## 插值语法
 1.{{}}:叫Mustache语法 也叫胡须语法 双大括号语法
@@ -572,7 +581,7 @@ const app = {
       methods: {
             btnclick(i){
               // console.log(i);
-              //2. 在事件中使用$emit来对父组件发送事件item-click来发送数据
+              //2. 在事件中使用$emit来对父组件发送事件,将这个事件传到外面去item-click来发送数据
               this.$emit('item-click',i)
             }
           }
@@ -1017,12 +1026,12 @@ const routes = [
     {
         path: '/home',
         component: Home,
-        children: {
+        children: [
             {
                 path: 'news',
                 component: HomeNews
             }
-        }
+        ]
     },
     {
         path: '/about',
@@ -1664,10 +1673,12 @@ request({
 响应失败拦截
 
 ### 使用请求的流程
-1.在项目中下载axios
+1.在项目中下载axios 弄
 2.在项目中创建network文件
-3.在文件中写
+3.在文件中写,引入axios
    ```
+    import axios from "axios"
+
     export function request(config){  
     const instnace = axios.create({
       baseURL: 'http://123.207.32.32:8000'
@@ -1718,7 +1729,18 @@ createApp(App).use(ElementUI).use(router).mount("#app");
 ```
 4.然后就可以去element-ui下载组件了
 
+先去githtb将这个网易云app下载，打开git
+$ git clone git@github.com:Binaryify/NeteaseCloudMusicApi.git
 
+$ npm install
+
+$ node app.js
+
+打开终端
+npm run start
+
+再将项目开启
+npm run serve
 
 
 

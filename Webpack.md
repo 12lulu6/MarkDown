@@ -75,66 +75,159 @@ module.exports = {
   },
 ```
 ### plugins
-- 1.通过npm安装需要使用的plugins(某些webpack已经内置的插件不需要安装)
-- 2.在webpack.config.js中的plugins中配置插件。
-  - HtmlWebpackPlugin
-    * 下载npm install --save-dev html-webpack-plugin
-    * 引入`var HtmlWebpackPlugin = require('html-webpack-plugin');`
-    * 配置`plugins: [new HtmlWebpackPlugin()]`
-    * 结果为：在打包中生成一个新的index.huml，将src中的index.html复制到dist里这个新的index.html中---`plugins: [new HtmlWebpackPlugin({templete:'./src/index.html'})]` 
-    * 
-  - UglifyjsWebpackPlugin
-    * 下载npm i -D uglifyjs-webpack-plugin
-    * 引入`const UglifyJsPlugin = require('uglifyjs-webpack-plugin')`
-    * 配置使用`plugins: new UglifyJsPlugin()]`
+####  HtmlWebpackPlugin
+  - 下载npm install --save-dev html-webpack-plugin
+  * 引入`var HtmlWebpackPlugin = require('html-webpack-plugin');`
+  * 配置`plugins: [new HtmlWebpackPlugin()]`
+  * 结果为：在打包中生成一个新的index.huml，将src中的index.html复制到dist里这个新的index.html中---`plugins: [new HtmlWebpackPlugin({templete:'./src/index.html'})]` 
+#### UglifyjsWebpackPlugin
+  * 下载npm i -D uglifyjs-webpack-plugin
+  * 引入`const UglifyJsPlugin = require('uglifyjs-webpack-plugin')`
+  * 配置使用`plugins: new UglifyJsPlugin()]`
+#### MiniCssExtractPlugin
+  打包生成css文件夹
+  * 下载npm i -D mini-css-extract-plugin
+  * 引入`const MiniCssExtractPlugin = require('mini-css-extract-plugin');`
+  * 配置
+      ```
+        module.exports = {
+      entry: './src/js/index.js',
+      output: {
+        filename: 'js/built.js',
+        path: resolve(__dirname, 'build')
+      },
+      module: {
+        rules: [
+          {
+            test: /\.css$/,
+            use: [
+              // 创建style标签，将样式放入
+              // 'style-loader', 
+              // 这个loader取代style-loader。作用：提取js中的css成单独文件
+              MiniCssExtractPlugin.loader,
+              // 将css文件整合到js文件中
+              'css-loader'
+            ]
+          }
+        ]
+      },
+      plugins: [
+        new HtmlWebpackPlugin({
+          template: './src/index.html'
+        }),
+        new MiniCssExtractPlugin({
+          // 对输出的css文件进行重命名
+          filename: 'css/built.css'
+        })
+      ],
+      mode: 'development'
+    };
+      ```
+  
+#### CssMinimizerWebpackPlugin
+  优化和压缩 CSS。
+  * 下载 npm install css-minimizer-webpack-plugin --save-dev
+  * 使用
+      ```
+        const MiniCssExtractPlugin = require("mini-css-extract-plugin");
+        const CssMinimizerPlugin = require("css-minimizer-webpack-plugin");
+        module.exports = {
+          module: {
+            rules: [
+              {
+                test: /.s?css$/,
+                use: [MiniCssExtractPlugin.loader, "css-loader", "sass-loader"],
+              },
+            ],
+          },
+          optimization: {
+            minimizer: [
+              // 在 webpack@5 中，你可以使用 `...` 语法来扩展现有的 minimizer（即 `terser-webpack-plugin`），将下一行取消注释
+              // `...`,
+              new CssMinimizerPlugin(),
+            ],
+          },
+          plugins: [new MiniCssExtractPlugin()],
+        };
+      ```
+#### EslintWebpackPlugin
+该插件使用eslint来查找和修复 JavaScript 代码中的问题。
+ * 下载npm install eslint-webpack-plugin --save-dev
+ * 
 ...
 ***
-每次都要重新webpack ./src/main.js ./dist/bundle.js或者npm run build，可以选择搭建一个服务器,就能实时监听我们的代码改变。先放在内存里面，你不断测试，当真正发布的时候才到磁盘上(dist文件夹)。使用的是express框架
+每次都要重新webpack,可以选择搭建一个服务器,就能实时监听我们的代码改变。先放在内存里面，你不断测试，当真正发布的时候才到磁盘上(dist文件夹)。使用的是express框架
 ## devserver
 - 下载npm i webpack-dev-server -D
 - 在webpack.config.js中devServer:{contentBase:'.dist'(只能服务文件夹),inline:true(是否需要实时监听)}
 ```
+/*
+  开发环境配置：能让代码运行
+    运行项目指令：
+      webpack 会将打包结果输出出去
+      npx webpack-dev-server 只会在内存中编译打包，没有输出
+*/
+const { resolve } = require('path');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+
 module.exports = {
-  entry: './src/index.js',
+  entry: './src/js/index.js',
   output: {
-    filename: 'built.js',
+    filename: 'js/built.js',
     path: resolve(__dirname, 'build')
   },
   module: {
     rules: [
+      // loader的配置
       {
+        // 处理less资源
+        test: /\.less$/,
+        use: ['style-loader', 'css-loader', 'less-loader']
+      },
+      {
+        // 处理css资源
         test: /\.css$/,
         use: ['style-loader', 'css-loader']
       },
-      // 打包其他资源(除了html/js/css资源以外的资源)
       {
-        // 排除css/js/html资源
-        exclude: /\.(css|js|html|less)$/,
+        // 处理图片资源
+        test: /\.(jpg|png|gif)$/,
+        loader: 'url-loader',
+        options: {
+          limit: 8 * 1024,
+          name: '[hash:10].[ext]',
+          // 关闭es6模块化
+          esModule: false,
+          outputPath: 'imgs'
+        }
+      },
+      {
+        // 处理html中img资源
+        test: /\.html$/,
+        loader: 'html-loader'
+      },
+      {
+        // 处理其他资源
+        exclude: /\.(html|js|css|less|jpg|png|gif)/,
         loader: 'file-loader',
         options: {
-          name: '[hash:10].[ext]'
+          name: '[hash:10].[ext]',
+          outputPath: 'media'
         }
       }
     ]
   },
   plugins: [
+    // plugins的配置
     new HtmlWebpackPlugin({
       template: './src/index.html'
     })
   ],
   mode: 'development',
-
-  // 开发服务器 devServer：用来自动化（自动编译，自动打开浏览器，自动刷新浏览器~~）
-  // 特点：只会在内存中编译打包，不会有任何输出
-  // 启动devServer指令为：npx webpack-dev-server
   devServer: {
-    // 项目构建后路径
     contentBase: resolve(__dirname, 'build'),
-    // 启动gzip压缩
     compress: true,
-    // 端口号
     port: 3000,
-    // 自动打开浏览器
     open: true
   }
 };
