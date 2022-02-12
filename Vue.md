@@ -709,7 +709,66 @@ Webpack是前端资源构建工具，是一个静态打包工具。
      --->还能在src中创建一个vue文件 创建App.js import default={将组件App中的template拿过来}，然后在main.js中导入const App = import App form '什么什么app.js'
      --->在src中创建一个vue创建一个app.vue将app.js中的template放到template标签中，将data放到name:'App'后面，还能再下面写样式   
      --->到了这一步你要知道浏览器之前处理css 图片 less ES6->ES5等都要使用loader才能解析，所以.vue也要vue-loader，这部分查看ppt或者去官网vue.js查看vue-loader
+```
+new Vue({
+  el: '#app',
+  router,
+  components: { App },
+  template: '<App/>'
+})
 
+
+// 下面都要注释
+// 1.第一阶段
+new Vue({
+  el: '#app',
+  template:`
+  <div>
+    <h2>我是模板。
+    和el同在的话，我会直接将这个模板替换index.html中<div id='app'>的那个部分
+    </h2>
+    <h3>{{message}}</h3>
+  </div>
+  `,
+  data:{
+    message:'我是组件',
+  }
+})
+// 2.第二阶段 将模板作为一个组件使用
+const App = {
+  template:`
+  <div>
+    <h2>我是模板。
+    和el同在的话，我会直接将这个模板替换index.html中<div id='app'>的那个部分
+    </h2>
+    <h3>{{message}}</h3>
+  </div>
+  `,
+  data() {
+    return {
+      message:'我是组件',
+    }
+  },
+}
+new Vue({
+  el: '#app',
+  temolate:`<App/> `,
+  components:{
+    App
+  }
+})
+// 3.第三阶段 将组件const App={}分离出去 创建App.vue,得到最终形态
+// 解释：在index.html中有<div id='app'> 就会到main.js中查看相应的el: '#app',
+// 当template和el同时存在的时候template会将<div id='app'>直接替换，
+
+// 第一部分简洁代码->将template弄为组件1.const App = {...}  2.注册组件components:{App}
+// 3.使用组件temolate:`<App/>`。
+// 第二部分简化代码->将const App = {...}提取出去，变为App.vue，还要配置loader 
+// --安装vue-loader加载和vue-template-compiler对vue编译的
+// npm i vue-loader vue-template-compiler --save-dev
+// --在
+//  就会在index.html中的<div id='app'>部分用temolate:`<App/>`代替
+ ```
  我们发现在webpack.config.js中的代码多起来了，有开发依赖(devServer )，生产依赖(plugin)，分为三个个js文件(开发生产环境相关的配置，开发时相关的配置，还有公共的配置)，把他们分开放在src下的build中
     --下载npm i webpack merge --save-dev
     --在webpack.config.js中引入 const webpackMerge = require('webpack-merge')

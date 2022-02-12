@@ -355,22 +355,85 @@ server.listen(3000, function () {
 ```
 以上的第三方模块就介绍到这里
 下面使用nodejs中的框架express.加快项目开发，便于团队协作
-# express
+#   Express
+解释：类似于内置http模块，专门用来创建web服务器，是一个第三方模块。核心就是中间件，就是一系列中间件的调用。
+## 执行流程
+> 当一个请求到达express服务器之后，可以连续调用多个中间件，从而对这次请求进行预处理。
+## 中间件
+什么是中间件？
+>- 就是传递给express的一个回调函数，有三个参数(req,res，next).
+>- 它最大的特点就是，一个中间件处理完，再传递给下一个中间件。App实例在运行过程中，会调用一系列的中间件。
+>- 每个中间件都可以对HTTP请求（request对象）进行加工，并且决定是否调用next方法，将request对象再传给下一个中间件。
+> - 多个中间件共享同一份req和res。基于这样的特性，我们可以在上游的中间件中，统一为req或 res对象添加自定义的属性或方法，供下游的中间件或路由进行使用。
+
+我的理解就是创建web服务器来监听请求，当请求过来会调用多个中间件，分为全局生效的中间件和局部生效的中间件.
+#### 全局生效的中间件
+客户端发起的任何请求，到达服务器之后，都会触发的中间件
+```
+const mw = (req, res, next) => {
+    ...
+    next()
+}
+
+const mw1 = (req, res, next) => {
+    ...
+    next()
+}
+
+// 全局生效的中间件,中间件调用顺序以传入顺序为准
+// 通过调用server.use(中间件函数)，即可定义一个全局生效的中间件
+app.use(mw,mw1)
+```
+#### 局部生效的中间件
+```
+const mw = (req, res, next) => {
+    ...
+    next()
+}
+const mw1 = (req, res, next) => {
+    ...
+    next()
+}
+// 局部生效的中间件
+app.get('/',mw,(req,res)=>{
+    res.send('路径：/')
+})
+
+// 定义多个局部生效的中间件
+// 1、直接逗号分隔
+app.get('/',mw,mw1,(req,res)=>{
+    res.send('路径：/')
+})
+// 2、或者使用数组包含
+app.get('/',[mw,mw1],(req,res)=>{
+    res.send('路径：/')
+})
+```
+## express执行
 - 创建目录
 - 在目录中下载express
   >npm init -y
   npm install express
 - 使用express
   ```
+  1.导入express模块
     var express = require('express');
-  var app = express();
-  // 3.路由 使用get提交 匹配/
-  app.get('/',function(req,res){
-      // 使用end() 响应字符串（会乱码）
-      // 使用send() 响应字符串（自动识别）
-      // render() 响应字符串 （自动识别，只能打开指定文件字符串并响应 ）
-      res.send("<a href='#'>点击</a>");
+  2.创建web服务器
+    var app = express();
+  // 监听get或者post请求，并响应数据
+    app.get('/',function(req,res，next){
+      参数一：客户端请求的URL地址
+      参数二：请求对应的处理函数 中间件函数
+      参数三：用于执行下一个中间件的函数
+           req:请求对象（包含与请求相关的属性和方法）
+           res:响应对象（包含与响应相关的属性和方法）
+               使用end() 响应字符串（会乱码）
+               使用send() 响应字符串（自动识别）将处理好的内容发送给客户端
+               render() 响应字符串 （自动识别，只能打开指定文件字符串并响应 ）
+              res.send("<a href='#'>点击</a>");
   })
+  
+  3.启动web服务器
   app.listen(8080,function(){
       console.log("启动成功，访问：http://localhost:8080");
   })
@@ -440,125 +503,39 @@ npm install express-art-template
   - 发送POST请求：app.post（请求路径，回调函数）
   - 发送  任意请求：app.all（请求路径，回调函数）
 ....
-
-- 特殊语法：app.use（请求路径，回调函数）
-  - 区别1：use匹配任意类型请求
-  - 区别2：use非完全匹配（ps. 只需要url前面匹配请求路径即可匹配）
-
--	路由参数：app.HTTP请求类型（请求路径/:参数1/.../:参数n，回调函数）
-
-
+在路由模块中
 ```
-//1.引入express框架模块
-var express = require('express')
-//2.创建框架核心app对象
-var app = express()
-//3.路由
-app.get('/',  function(req, res) {
-
-	//注：修改method=get 或者 method=post查看结果
-	var formHtml = `
-		<form action="/test" method="post">
-			<input type="text" name="uname" />
-			<input type="text" name="age" />
-			<input type="submit"  />
-		</form>
-	`
-	res.send(formHtml)
+// 1、导入express模块
+const express = require('express')
+// 2、创建路由对象
+const router = express.Router()
+// 3、挂载具体的路由
+router.get('/user/list', (req, res) => {
+    res.send('Get User List')
+})
+router.post('/user/add', (req, res) => {
+    res.send('Add new user')
 })
 
-app.get('/test', function(req, res){
-	res.send('this is get submit')
-})
-
-app.post('/test', function(req, res){
-	res.send('this is post submit')
-})
-
-//4.启动服务
-app.listen(8080, function(){
-	console.log('Running...')
-})
-
-```
-**上面的代码这个表单提交后输出，this is post submit**
-
-使用use，部分匹配
-
-```
-//1.引入express框架模块
-var express = require('express')
-//2.创建框架核心app对象
-var app = express()
-//3.路由
-app.get('/',  function(req, res) {
-
-	var formHtml = `
-		<form action="/test/a/b/c" method="post">
-			<input type="text" name="uname" />
-			<input type="text" name="age" />
-			<input type="submit"  />
-		</form>
-	`
-	res.send(formHtml)
-})
-
-app.use('/test', function(req, res){
-	res.send('this is /test')
-})
-
-//4.启动服务
-app.listen(8080, function(){
-	console.log('Running...')
-})
-
-```
-**上面的代码这个表单提交后输出，this is /test**
-部分匹配/test
-
-### 模块化路由
- 为了方便对路由进行模块化的管理，Express 不建议将路由直接挂载到 app 上，而是推荐将路由抽离为单独的模块。
-
-将路由抽离为单独模块的步骤如下：
-- 创建路由模块对应的 .js 文件 router.js
-- 调用 express.Router() 函数创建路由对象
-- 向路由对象上挂载具体的路由
-- 使用 module.exports 向外共享路由对象
-- 使用 app.use() 函数注册路由模块
-
-router.js
-```
-
-var fs = require('fs')
-var Student = require('./student')
-
-// Express 提供了一种更好的方式
-// 专门用来包装路由的
-var express = require('express')
-
-// 1. 创建一个路由容器
-var router = express.Router()
-
-// 2. 把路由都挂载到 router 路由容器中
-
-router.get('/students', function (req, res) {
- res.send("students pages")
-})
-
-router.post('/students/new', function (req, res) {
-  res.send("students new pages")
-})
-// 3. 把 router 导出
+// 4、向外导出路由
 module.exports = router
-```
-使用路由模块
-```
-//1.导入路由模块
-const userRouter  = require('.../router.js')
 
-//2.使用app.use()注册路由
-app.use(userRouter)
 ```
+在使用路由模块的模块中
+```
+const express = require('express')
+const server = express()
+
+// 1、导入路由模块
+const router = require('./router/router')
+// 2、注册路由模块
+server.use(router)
+
+server.listen(80, () => {
+    console.log('server running at http://127.0.0.1');
+})
+```
+
 ### 静态资源处理
 express 提供了一个非常好用的函数，叫做 express.static()，通过它，我们可以非常方便地创建一个静态资源服务器，例如，通过如下代码就可以将 public 目录下的图片、CSS 文件、JavaScript文件对外开放访问了：
 `app.use(express.static('./public/'))`
@@ -569,40 +546,9 @@ express 提供了一个非常好用的函数，叫做 express.static()，通过�
 `app.use('/public/', express.static('./public/'))`
 现在，你就可以通过带有 /public 前缀地址来访问 public 目录中的文件了
 
-### express中间件
-中间件（Middleware ）其实就是一个函数，特指业务流程的中间处理环节。分为全局中间件和路由中间件。就是你请求发过来到发给客户端，我给你加工下。
-
->这就是一个中间件，本质是一个函数。必须包含 next 参数。而路由处理函数中只包含 req 和 res.
-next函数的作用： next 函数是实现多个中间件连续调用的关键，它表示把流转关系转交给下一个中间件或路由。
-```
-const mw = function(req, res, next) {
-  next()
-}
-app.use(mw)
-```
-多个中间件之间，共享同一份 req 和 res。基于这样的特性，我们可以在上游的中间件中，统一为 req 或 res 对象添加自定义的属性或方法，供下游的中间件或路由进行使用。
-```
-app.use('/', function(req, res, next){
-	console.log(1)
-	next()
-})
-app.use('/', function(req, res, next){
-	console.log(2)
-	next()
-})
-```
-### express内置中间件
-自 Express 4.16.0 版本开始，Express 内置了 3 个常用的中间件，极大的提高了 Express 项目的开发效率和体验：
-
-① express.static 快速托管静态资源的内置中间件，例如： HTML 文件、图片、CSS 样式等（无兼容性）
-
-② express.json 解析 JSON 格式的请求体数据（有兼容性，仅在 4.16.0+ 版本中可用）
-
-③ express.urlencoded 解析 URL-encoded 格式的请求体数据（有兼容性，仅在 4.16.0+ 版本中可用）
-
-
-
-
+# MVVM
+什么是MVVM？MVVM是Model-View-ViewModel的缩写。
+解释：就是当我们使用node.js有了一整套后端开发模型之后，我们就能尝试使用js在浏览器中操作html。刚开始的时候使用的是js源码撸，后来jqurey的出现解决了兼容性等问题，第三阶段使用的是MVC模式，配合服务器使用，但是随着交互性的增加，变得复杂，出现MVVM模型（vue等）不关心DOM的结构，只关心数据的存储
 
 
 
